@@ -2,7 +2,7 @@
 
 // URL của Web App Google Apps Script của bạn
 // THAY THẾ BẰNG URL WEB APP CỦA BẠN SAU KHI TRIỂN KHAI APPS SCRIPT Ở BƯỚC TIẾP THEO
-const GOOGLE_APPS_SCRIPT_URL = 'YOUR_WEB_APP_URL_HERE'; 
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqtttoWj4Uk5C8XQdAxFIQ5Bh06LLkj333vOy60_mvlyo6vC1wG2MIyuGoknDPouqy/exec'; 
 
 // Mảng để lưu trữ dữ liệu đóng gói và lịch sử số dư (hiện tại là tạm thời trong bộ nhớ)
 let inventory = [];
