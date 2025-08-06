@@ -50,6 +50,8 @@ function renderUserTable(users) {
     userListTbody.innerHTML = '';
     const currentUser = window.firebaseAuth.currentUser;
     users.forEach(user => {
+        if (user.id === currentUser.uid) return; // Không hiển thị admin đang đăng nhập
+
         const row = document.createElement('tr');
         
         const statusDisplay = {
@@ -61,7 +63,7 @@ function renderUserTable(users) {
         row.innerHTML = `
             <td>${user.email}</td>
             <td>
-                <select class="form-control form-control-sm user-role-select" data-id="${user.id}" ${user.id === currentUser.uid ? 'disabled' : ''}>
+                <select class="form-control form-control-sm user-role-select" data-id="${user.id}">
                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
                 </select>
@@ -70,7 +72,8 @@ function renderUserTable(users) {
             <td class="action-buttons">
                 ${user.status === 'pending' ? `<button class="btn btn-success btn-sm activate-btn" data-id="${user.id}">Kích hoạt</button>` : ''}
                 ${user.status === 'blocked' ? `<button class="btn btn-info btn-sm unblock-btn" data-id="${user.id}">Bỏ chặn</button>` : ''}
-                ${user.status === 'active' && user.id !== currentUser.uid ? `<button class="btn btn-warning btn-sm block-btn" data-id="${user.id}">Chặn</button>` : ''}
+                ${user.status === 'active' ? `<button class="btn btn-warning btn-sm block-btn" data-id="${user.id}">Chặn</button>` : ''}
+                <button class="btn btn-danger btn-sm delete-btn" data-id="${user.id}">Xóa</button>
             </td>
         `;
         userListTbody.appendChild(row);
@@ -108,18 +111,37 @@ async function updateStatus(userId, newStatus) {
     }
 }
 
+// HÀM XỬ LÝ XÓA TÀI KHOẢN
+async function deleteUser(userId) {
+    if (confirm("Bạn có chắc chắn muốn xóa tài khoản này không? Thao tác này không thể hoàn tác.")) {
+        try {
+            // Hiển thị thông báo đang tải
+            userListLoading.style.display = 'block';
+            await window.firebaseDb.collection('users').doc(userId).delete();
+            alert('Tài khoản đã được xóa thành công!');
+            fetchUsers();
+        } catch (error) {
+            console.error("Lỗi khi xóa tài khoản:", error);
+            alert('Lỗi: Không thể xóa tài khoản người dùng. Vui lòng kiểm tra quyền.');
+        } finally {
+            userListLoading.style.display = 'none';
+        }
+    }
+}
+
 // Lắng nghe các sự kiện click và thay đổi trên bảng
 userListTbody.addEventListener('click', (e) => {
     const target = e.target;
+    const userId = target.getAttribute('data-id');
+
     if (target.classList.contains('activate-btn')) {
-        const userId = target.getAttribute('data-id');
         updateStatus(userId, 'active');
     } else if (target.classList.contains('block-btn')) {
-        const userId = target.getAttribute('data-id');
         updateStatus(userId, 'blocked');
     } else if (target.classList.contains('unblock-btn')) {
-        const userId = target.getAttribute('data-id');
         updateStatus(userId, 'active');
+    } else if (target.classList.contains('delete-btn')) {
+        deleteUser(userId);
     }
 });
 
