@@ -12,6 +12,9 @@ const userNameInput = document.getElementById('user-name');
 const changePasswordForm = document.getElementById('change-password-form');
 const newPasswordInput = document.getElementById('new-password');
 
+// Thêm biến cho tên người dùng trên sidebar
+const sidebarUserName = document.getElementById('sidebar-user-name');
+
 const userDashboardUrl = 'https://tddsb.blogspot.com/p/user-dashboard.html';
 const loginPageUrl = 'https://tddsb.blogspot.com/p/login.html';
 const adminDashboardUrl = 'https://tddsb.blogspot.com/p/admin-dashboard.html';
@@ -31,8 +34,16 @@ window.firebaseAuth.onAuthStateChanged(async (user) => {
                     userDashboardUserStatus.textContent = `Trạng thái: ${userData.status}`;
                     
                     // Thêm phần hiển thị tên người dùng hiện tại
-                    if (userData.name) {
+                    if (userNameInput && userData.name) {
                         userNameInput.value = userData.name;
+                    }
+
+                    // Cập nhật tên người dùng trên sidebar
+                    if (sidebarUserName && userData.name) {
+                        sidebarUserName.textContent = userData.name;
+                    } else if (sidebarUserName) {
+                        // Nếu không có tên, hiển thị email
+                        sidebarUserName.textContent = user.email;
                     }
                 } else {
                     await window.firebaseAuth.signOut();
