@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (doc.exists) {
                     const userData = doc.data();
                     if (userData.status === 'active' && userData.role === 'user') {
+                        // Cập nhật thông tin người dùng
                         if (userDashboardUserEmail) userDashboardUserEmail.textContent = `Email: ${user.email}`;
                         if (userDashboardUserRole) userDashboardUserRole.textContent = `Vai trò: ${userData.role}`;
                         if (userDashboardUserStatus) userDashboardUserStatus.textContent = `Trạng thái: ${userData.status}`;
@@ -40,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (userNameInput && userData.name) {
                             userNameInput.value = userData.name;
                         }
-
                         if (sidebarUserName && userData.name) {
                             sidebarUserName.textContent = userData.name;
                         } else if (sidebarUserName) {
@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = loginPageUrl;
                 }
             } catch (error) {
-                console.error("Lỗi khi tải dữ liệu người dùng cho dashboard:", error);
                 await window.firebaseAuth.signOut();
                 window.location.href = loginPageUrl;
             }
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     sidebarUserName.textContent = newName;
                 }
             } catch (error) {
-                console.error("Lỗi khi cập nhật thông tin:", error);
                 alert('Lỗi: Không thể cập nhật thông tin. Vui lòng thử lại.');
             }
         }
@@ -106,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Đổi mật khẩu thành công!');
             changePasswordForm.reset();
         } catch (error) {
-            console.error("Lỗi khi xác thực hoặc đổi mật khẩu:", error);
             if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-login-credentials') {
                  alert('Mật khẩu cũ không đúng. Vui lòng nhập lại.');
             } else if (error.code === 'auth/requires-recent-login') {
@@ -123,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await window.firebaseAuth.signOut();
             window.location.href = loginPageUrl;
         } catch (error) {
-            console.error("Lỗi đăng xuất:", error);
             alert('Lỗi khi đăng xuất. Vui lòng thử lại.');
         }
     };
