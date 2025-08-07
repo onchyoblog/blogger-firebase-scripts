@@ -10,6 +10,7 @@ const userLogoutLink = document.getElementById('userLogoutLink');
 const updateProfileForm = document.getElementById('update-profile-form');
 const userNameInput = document.getElementById('user-name');
 const changePasswordForm = document.getElementById('change-password-form');
+const oldPasswordInput = document.getElementById('old-password'); // Thêm dòng này để lấy mật khẩu cũ
 const newPasswordInput = document.getElementById('new-password');
 
 // Thêm biến cho tên người dùng trên sidebar
@@ -17,7 +18,6 @@ const sidebarUserName = document.getElementById('sidebar-user-name');
 
 const userDashboardUrl = 'https://tddsb.blogspot.com/p/user-dashboard.html';
 const loginPageUrl = 'https://tddsb.blogspot.com/p/login.html';
-const adminDashboardUrl = 'https://tddsb.blogspot.com/p/admin-dashboard.html';
 
 // Lắng nghe sự thay đổi trạng thái đăng nhập
 window.firebaseAuth.onAuthStateChanged(async (user) => {
@@ -72,6 +72,10 @@ async function handleUpdateProfile(event) {
                 name: newName
             });
             alert('Cập nhật thông tin thành công!');
+            // Cập nhật tên trên sidebar ngay lập tức
+            if (sidebarUserName) {
+                sidebarUserName.textContent = newName;
+            }
         } catch (error) {
             console.error("Lỗi khi cập nhật thông tin:", error);
             alert('Lỗi: Không thể cập nhật thông tin. Vui lòng thử lại.');
@@ -84,18 +88,33 @@ async function handleChangePassword(event) {
     event.preventDefault();
     const user = window.firebaseAuth.currentUser;
     if (user) {
+        const oldPassword = oldPasswordInput.value;
         const newPassword = newPasswordInput.value;
-        if (newPassword.length >= 6) {
-            try {
-                await user.updatePassword(newPassword);
-                alert('Đổi mật khẩu thành công!');
-                changePasswordForm.reset();
-            } catch (error) {
-                console.error("Lỗi khi đổi mật khẩu:", error);
-                alert(`Lỗi: Không thể đổi mật khẩu. ${error.message}`);
+
+        if (newPassword.length < 6) {
+            alert('Mật khẩu mới phải có ít nhất 6 ký tự.');
+            return;
+        }
+        
+        // Xác thực lại người dùng bằng mật khẩu cũ
+        const credential = window.firebaseAuth.EmailAuthProvider.credential(user.email, oldPassword);
+
+        try {
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(newPassword);
+            alert('Đổi mật khẩu thành công!');
+            changePasswordForm.reset();
+        } catch (error) {
+            console.error("Lỗi khi xác thực hoặc đổi mật khẩu:", error);
+            // Bắt lỗi cụ thể để thông báo cho người dùng
+            if (error.code === 'auth/wrong-password') {
+                 alert('Mật khẩu cũ không đúng. Vui lòng nhập lại.');
+            } else if (error.code === 'auth/requires-recent-login') {
+                alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để đổi mật khẩu.');
+                await window.firebaseAuth.signOut(); // Đăng xuất người dùng để họ đăng nhập lại
+            } else {
+                 alert(`Lỗi: Không thể đổi mật khẩu. ${error.message}`);
             }
-        } else {
-            alert('Mật khẩu phải có ít nhất 6 ký tự.');
         }
     }
 }
