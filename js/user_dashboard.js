@@ -1,93 +1,95 @@
 // user_dashboard.js
 
-const userDashboardLogoutButton = document.getElementById('userDashboardLogoutButton');
-const userDashboardUserEmail = document.getElementById('userDashboardUserEmail');
-const userDashboardUserRole = document.getElementById('userDashboardUserRole');
-const userDashboardUserStatus = document.getElementById('userDashboardUserStatus');
-const userLogoutLink = document.getElementById('userLogoutLink');
+document.addEventListener('DOMContentLoaded', () => {
+    const userDashboardLogoutButton = document.getElementById('userDashboardLogoutButton');
+    const userDashboardUserEmail = document.getElementById('userDashboardUserEmail');
+    const userDashboardUserRole = document.getElementById('userDashboardUserRole');
+    const userDashboardUserStatus = document.getElementById('userDashboardUserStatus');
+    const userLogoutLink = document.getElementById('userLogoutLink');
 
-// Biến cho các phần tử mới
-const updateProfileForm = document.getElementById('update-profile-form');
-const userNameInput = document.getElementById('user-name');
-const changePasswordForm = document.getElementById('change-password-form');
-const oldPasswordInput = document.getElementById('old-password'); // Thêm dòng này để lấy mật khẩu cũ
-const newPasswordInput = document.getElementById('new-password');
+    const updateProfileForm = document.getElementById('update-profile-form');
+    const userNameInput = document.getElementById('user-name');
+    const changePasswordForm = document.getElementById('change-password-form');
+    const oldPasswordInput = document.getElementById('old-password');
+    const newPasswordInput = document.getElementById('new-password');
+    const sidebarUserName = document.getElementById('sidebar-user-name');
 
-// Thêm biến cho tên người dùng trên sidebar
-const sidebarUserName = document.getElementById('sidebar-user-name');
+    const userDashboardUrl = 'https://tddsb.blogspot.com/p/user-dashboard.html';
+    const loginPageUrl = 'https://tddsb.blogspot.com/p/login.html';
+    
+    if (typeof firebase === 'undefined' || typeof firebase.auth === 'undefined') {
+        return;
+    }
 
-const userDashboardUrl = 'https://tddsb.blogspot.com/p/user-dashboard.html';
-const loginPageUrl = 'https://tddsb.blogspot.com/p/login.html';
+    window.firebaseAuth = firebase.auth();
+    window.firebaseDb = firebase.firestore();
 
-// Lắng nghe sự thay đổi trạng thái đăng nhập
-window.firebaseAuth.onAuthStateChanged(async (user) => {
-    if (!user) {
-        window.location.href = loginPageUrl;
-    } else {
-        try {
-            const doc = await window.firebaseDb.collection('users').doc(user.uid).get();
-            if (doc.exists) {
-                const userData = doc.data();
-                if (userData.status === 'active' && userData.role === 'user') {
-                    userDashboardUserEmail.textContent = `Email: ${user.email}`;
-                    userDashboardUserRole.textContent = `Vai trò: ${userData.role}`;
-                    userDashboardUserStatus.textContent = `Trạng thái: ${userData.status}`;
-                    
-                    // Thêm phần hiển thị tên người dùng hiện tại
-                    if (userNameInput && userData.name) {
-                        userNameInput.value = userData.name;
-                    }
+    window.firebaseAuth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = loginPageUrl;
+        } else {
+            try {
+                const doc = await window.firebaseDb.collection('users').doc(user.uid).get();
+                if (doc.exists) {
+                    const userData = doc.data();
+                    if (userData.status === 'active' && userData.role === 'user') {
+                        if (userDashboardUserEmail) userDashboardUserEmail.textContent = `Email: ${user.email}`;
+                        if (userDashboardUserRole) userDashboardUserRole.textContent = `Vai trò: ${userData.role}`;
+                        if (userDashboardUserStatus) userDashboardUserStatus.textContent = `Trạng thái: ${userData.status}`;
+                        
+                        if (userNameInput && userData.name) {
+                            userNameInput.value = userData.name;
+                        }
 
-                    // Cập nhật tên người dùng trên sidebar
-                    if (sidebarUserName && userData.name) {
-                        sidebarUserName.textContent = userData.name;
-                    } else if (sidebarUserName) {
-                        // Nếu không có tên, hiển thị email
-                        sidebarUserName.textContent = user.email;
+                        if (sidebarUserName && userData.name) {
+                            sidebarUserName.textContent = userData.name;
+                        } else if (sidebarUserName) {
+                            sidebarUserName.textContent = user.email;
+                        }
+                    } else {
+                        await window.firebaseAuth.signOut();
+                        window.location.href = loginPageUrl;
                     }
                 } else {
                     await window.firebaseAuth.signOut();
                     window.location.href = loginPageUrl;
                 }
-            } else {
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu người dùng cho dashboard:", error);
                 await window.firebaseAuth.signOut();
                 window.location.href = loginPageUrl;
             }
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu người dùng cho dashboard:", error);
-            await window.firebaseAuth.signOut();
-            window.location.href = loginPageUrl;
         }
-    }
-});
+    });
 
-// Hàm xử lý cập nhật thông tin
-async function handleUpdateProfile(event) {
-    event.preventDefault();
-    const user = window.firebaseAuth.currentUser;
-    if (user) {
-        const newName = userNameInput.value;
-        try {
-            await window.firebaseDb.collection('users').doc(user.uid).update({
-                name: newName
-            });
-            alert('Cập nhật thông tin thành công!');
-            // Cập nhật tên trên sidebar ngay lập tức
-            if (sidebarUserName) {
-                sidebarUserName.textContent = newName;
+    async function handleUpdateProfile(event) {
+        event.preventDefault();
+        const user = window.firebaseAuth.currentUser;
+        if (user) {
+            const newName = userNameInput.value;
+            try {
+                await window.firebaseDb.collection('users').doc(user.uid).update({
+                    name: newName
+                });
+                alert('Cập nhật thông tin thành công!');
+                if (sidebarUserName) {
+                    sidebarUserName.textContent = newName;
+                }
+            } catch (error) {
+                console.error("Lỗi khi cập nhật thông tin:", error);
+                alert('Lỗi: Không thể cập nhật thông tin. Vui lòng thử lại.');
             }
-        } catch (error) {
-            console.error("Lỗi khi cập nhật thông tin:", error);
-            alert('Lỗi: Không thể cập nhật thông tin. Vui lòng thử lại.');
         }
     }
-}
 
-// Hàm xử lý đổi mật khẩu
-async function handleChangePassword(event) {
-    event.preventDefault();
-    const user = window.firebaseAuth.currentUser;
-    if (user) {
+    async function handleChangePassword(event) {
+        event.preventDefault();
+        const user = window.firebaseAuth.currentUser;
+        if (!user) {
+            alert('Lỗi: Không tìm thấy người dùng. Vui lòng đăng nhập lại.');
+            return;
+        }
+
         const oldPassword = oldPasswordInput.value;
         const newPassword = newPasswordInput.value;
 
@@ -96,8 +98,7 @@ async function handleChangePassword(event) {
             return;
         }
         
-        // Xác thực lại người dùng bằng mật khẩu cũ
-        const credential = window.firebaseAuth.EmailAuthProvider.credential(user.email, oldPassword);
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPassword);
 
         try {
             await user.reauthenticateWithCredential(credential);
@@ -106,36 +107,33 @@ async function handleChangePassword(event) {
             changePasswordForm.reset();
         } catch (error) {
             console.error("Lỗi khi xác thực hoặc đổi mật khẩu:", error);
-            // Bắt lỗi cụ thể để thông báo cho người dùng
-            if (error.code === 'auth/wrong-password') {
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-login-credentials') {
                  alert('Mật khẩu cũ không đúng. Vui lòng nhập lại.');
             } else if (error.code === 'auth/requires-recent-login') {
                 alert('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để đổi mật khẩu.');
-                await window.firebaseAuth.signOut(); // Đăng xuất người dùng để họ đăng nhập lại
+                await window.firebaseAuth.signOut();
             } else {
                  alert(`Lỗi: Không thể đổi mật khẩu. ${error.message}`);
             }
         }
     }
-}
 
-const performUserLogout = async () => {
-    try {
-        await window.firebaseAuth.signOut();
-        window.location.href = loginPageUrl;
-    } catch (error) {
-        console.error("Lỗi đăng xuất:", error);
-        alert('Lỗi khi đăng xuất. Vui lòng thử lại.');
+    const performUserLogout = async () => {
+        try {
+            await window.firebaseAuth.signOut();
+            window.location.href = loginPageUrl;
+        } catch (error) {
+            console.error("Lỗi đăng xuất:", error);
+            alert('Lỗi khi đăng xuất. Vui lòng thử lại.');
+        }
+    };
+
+    if (userDashboardLogoutButton) userDashboardLogoutButton.addEventListener('click', performUserLogout);
+    if (userLogoutLink) userLogoutLink.addEventListener('click', performUserLogout);
+    if (updateProfileForm) {
+        updateProfileForm.addEventListener('submit', handleUpdateProfile);
     }
-};
-
-userDashboardLogoutButton.addEventListener('click', performUserLogout);
-userLogoutLink.addEventListener('click', performUserLogout);
-
-// Thêm sự kiện lắng nghe cho form cập nhật thông tin và đổi mật khẩu
-if (updateProfileForm) {
-    updateProfileForm.addEventListener('submit', handleUpdateProfile);
-}
-if (changePasswordForm) {
-    changePasswordForm.addEventListener('submit', handleChangePassword);
-}
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', handleChangePassword);
+    }
+});
